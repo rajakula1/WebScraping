@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Popup loaded');
+    
     // Get the current tab URL
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         const url = tabs[0].url;
@@ -47,13 +49,20 @@ async function processPage(url) {
             if (data.matchedKeywords && data.matchedKeywords.length > 0) {
                 console.log('Found keywords:', data.matchedKeywords);
                 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    console.log('Sending message to content script');
                     chrome.tabs.sendMessage(tabs[0].id, {
                         action: 'highlightKeywords',
                         keywords: data.matchedKeywords,
                         videos: data.videoUrls
+                    }, function(response) {
+                        console.log('Content script response:', response);
+                        if (response && response.status === 'success') {
+                            showSuccessMessage('Keywords found and highlighted!');
+                        } else {
+                            showErrorMessage('Failed to highlight keywords: ' + (response?.error || 'Unknown error'));
+                        }
                     });
                 });
-                showSuccessMessage('Keywords found and highlighted!');
             } else {
                 console.log('No keywords found');
                 showErrorMessage('No matching keywords found on this page.');
