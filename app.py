@@ -67,6 +67,8 @@ class ScrapeResponse(BaseModel):
     error: Optional[str] = None
     matchedKeywords: List[str] = []
     videoUrls: List[str] = []
+    illustrationUrls: List[str] = []
+    modelUrls: List[str] = []
     contentSummary: Optional[str] = None
     topics: Optional[List[str]] = None
     insights: Optional[List[str]] = None
@@ -231,6 +233,8 @@ class AIScraper:
             # Match keywords in content
             matched_keywords = []
             video_urls = []
+            illustration_urls = []
+            model_urls = []
 
             # Get all keywords from the mapping if none provided
             if not keywords:
@@ -252,17 +256,35 @@ class AIScraper:
                 if re.search(pattern, html_lower):
                     print(f"Found exact match for keyword: {keyword}")
                     matched_keywords.append(keyword)
+
                     # Create absolute URL for the video
-                    video_filename = KEYWORD_VIDEO_MAP.get(keyword, "default_video.mp4")
-                    # URL encode the filename to handle spaces and special characters
+                    video_filename = KEYWORD_VIDEO_MAP.get(keyword, {}).get(
+                        "video", "default_video.mp4"
+                    )
                     encoded_filename = requests.utils.quote(video_filename)
                     video_url = f"http://localhost:8000/video/{encoded_filename}"
                     video_urls.append(video_url)
+
+                    # Create absolute URL for the illustration
+                    illustration_filename = KEYWORD_VIDEO_MAP.get(keyword, {}).get(
+                        "illustration", "default_illustration.jpg"
+                    )
+                    encoded_illustration = requests.utils.quote(illustration_filename)
+                    illustration_url = (
+                        f"http://localhost:8000/video/{encoded_illustration}"
+                    )
+                    illustration_urls.append(illustration_url)
+
+                    # Get model URL
+                    model_url = KEYWORD_VIDEO_MAP.get(keyword, {}).get("model", "")
+                    model_urls.append(model_url)
                 else:
                     print(f"No match found for keyword: {keyword}")
 
             print(f"Matched keywords: {matched_keywords}")
             print(f"Video URLs: {video_urls}")
+            print(f"Illustration URLs: {illustration_urls}")
+            print(f"Model URLs: {model_urls}")
 
             # Analyze content
             results = await self.analyze_with_gpt(html, instructions, keywords)
@@ -274,6 +296,8 @@ class AIScraper:
                 "status": "success",
                 "matchedKeywords": matched_keywords,
                 "videoUrls": video_urls,
+                "illustrationUrls": illustration_urls,
+                "modelUrls": model_urls,
                 "contentSummary": results.get("contentSummary"),
                 "topics": results.get("topics"),
                 "insights": results.get("insights"),

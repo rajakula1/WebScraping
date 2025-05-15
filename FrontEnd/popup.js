@@ -53,7 +53,9 @@ async function processPage(url) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         action: 'highlightKeywords',
                         keywords: data.matchedKeywords,
-                        videos: data.videoUrls
+                        videos: data.videoUrls,
+                        illustrations: data.illustrationUrls,
+                        models: data.modelUrls
                     }, function(response) {
                         console.log('Content script response:', response);
                         if (response && response.status === 'success') {

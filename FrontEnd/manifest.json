@@ -1,17 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Blausen EMR AI",
+  "name": "Medical Content Enhancer",
   "version": "1.0",
-  "description": "Web scraping and analysis extension",
+  "description": "Enhances medical content with 3D animations and illustrations",
   "permissions": [
     "activeTab",
-    "storage",
-    "scripting",
-    "tabs",
-    "webRequest"
-  ],
-  "host_permissions": [
-    "<all_urls>"
+    "scripting"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -21,15 +15,23 @@
       "128": "icons/icon128.png"
     }
   },
-  "background": {
-    "service_worker": "background.js"
-  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_end",
-      "all_frames": true
+      "js": ["content.js"]
     }
-  ]
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }
