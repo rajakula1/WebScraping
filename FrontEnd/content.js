@@ -365,11 +365,11 @@ function highlightKeywords(keywords, videos, illustrations, models) {
 
         /* Add styles for video controls */
         #keywordVideoFrame::-webkit-media-controls {
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: transparent !important;
         }
 
         #keywordVideoFrame::-webkit-media-controls-panel {
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: transparent !important;
         }
 
         /* Ensure video maintains aspect ratio and quality */
@@ -477,10 +477,20 @@ function playVideo(videoUrl) {
         image-rendering: crisp-edges;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        filter: brightness(1.1) contrast(1.05);
-        -webkit-filter: brightness(1.1) contrast(1.05);
     `;
     document.body.appendChild(videoFrame);
+
+    // Add custom styles for video controls
+    const style = document.createElement('style');
+    style.textContent = `
+        #keywordVideoFrame::-webkit-media-controls {
+            background-color: transparent !important;
+        }
+        #keywordVideoFrame::-webkit-media-controls-panel {
+            background-color: transparent !important;
+        }
+    `;
+    document.head.appendChild(style);
 
     // Set video source with quality attributes
     const source = document.createElement('source');
@@ -518,6 +528,9 @@ function playVideo(videoUrl) {
         }
         if (closeButton) {
             closeButton.parentNode.removeChild(closeButton);
+        }
+        if (style) {
+            style.parentNode.removeChild(style);
         }
     };
     closeButton.style.cssText = `
@@ -564,6 +577,7 @@ function playVideo(videoUrl) {
             errorMessage.parentNode.removeChild(errorMessage);
             if (videoFrame) videoFrame.parentNode.removeChild(videoFrame);
             if (closeButton) closeButton.parentNode.removeChild(closeButton);
+            if (style) style.parentNode.removeChild(style);
         }, 3000);
     };
 }
