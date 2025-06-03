@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Medical Content Enhancer",
+  "name": "Johns Hopkins",
   "version": "1.0",
   "description": "Enhances medical content with 3D animations and illustrations",
   "permissions": [
@@ -9,10 +9,8 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+    "default_icon": {      
+      "128": "icons/JHS_3D.png"
     }
   },
   "content_scripts": [
@@ -30,8 +28,6 @@
     }
   ],
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "128": "icons/JHS_3D.png"
   }
 }

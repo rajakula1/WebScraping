@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+scraped_results/
+videos/
+illustrations/
+FrontEnd/
+FrontEnd.crx
+.qodo/
+
+# Docker
+Dockerfile
+.dockerignore 
