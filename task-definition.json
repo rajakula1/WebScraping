@@ -1,0 +1,44 @@
+{
+    "family": "webscraper-task",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "containerDefinitions": [
+        {
+            "name": "webscraper-backend",
+            "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/webscraper-backend:latest",
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 8000,
+                    "protocol": "tcp"
+                }
+            ],
+            "environment": [
+                {
+                    "name": "PYTHONUNBUFFERED",
+                    "value": "1"
+                },
+                {
+                    "name": "HOST",
+                    "value": "0.0.0.0"
+                },
+                {
+                    "name": "PORT",
+                    "value": "8000"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/webscraper-backend",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            }
+        }
+    ]
+} 

@@ -386,200 +386,216 @@ function highlightKeywords(keywords, videos, illustrations, models) {
     document.head.appendChild(style);
     console.log('Styles added to document');
 }
+
 function openImagePopup(imageUrl) {
-    // Remove any existing image popup and close button
-    let imgPopup = document.getElementById('keywordImagePopup');
-    if (imgPopup) imgPopup.parentNode.removeChild(imgPopup);
-    let closeButton = document.getElementById('closeImage');
-    if (closeButton) closeButton.parentNode.removeChild(closeButton);
+    // Remove any existing image popup and overlay
+    const existingPopup = document.getElementById('image-popup');
+    const existingOverlay = document.getElementById('image-overlay');
+    const existingCloseButton = document.getElementById('image-close-button');
+    
+    if (existingPopup) existingPopup.remove();
+    if (existingOverlay) existingOverlay.remove();
+    if (existingCloseButton) existingCloseButton.remove();
+
+    // Create image popup container
+    const popup = document.createElement('div');
+    popup.id = 'image-popup';
+    popup.style.position = 'fixed';
+    popup.style.top = '50%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.width = '80%';
+    popup.style.height = '80%';
+    popup.style.zIndex = '10000';
+    popup.style.backgroundColor = 'white';
+    popup.style.padding = '0';
+    popup.style.margin = '0';
+    popup.style.display = 'flex';
+    popup.style.justifyContent = 'center';
+    popup.style.alignItems = 'center';
+    popup.style.borderRadius = '8px';
+    popup.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
 
     // Create image element
-    imgPopup = document.createElement('img');
-    imgPopup.id = 'keywordImagePopup';
-    imgPopup.src = imageUrl;
-    imgPopup.style.position = 'fixed';
-    imgPopup.style.top = '50%';
-    imgPopup.style.left = '50%';
-    imgPopup.style.transform = 'translate(-50%, -50%)';
-    imgPopup.style.zIndex = '99998';
-    imgPopup.style.maxWidth = '90vw';
-    imgPopup.style.maxHeight = '90vh';
-    imgPopup.style.background = '#fff';
-    imgPopup.style.borderRadius = '10px';
-    imgPopup.style.boxShadow = '0 4px 24px rgba(0,0,0,0.4)';
-    imgPopup.style.padding = '8px';
-    document.body.appendChild(imgPopup);
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'contain';
+    img.style.backgroundColor = 'white';
+    img.style.borderRadius = '8px';
 
-    // Create close button
-    closeButton = document.createElement('button');
-    closeButton.id = 'closeImage';
-    closeButton.innerHTML = '✕';
-    closeButton.onclick = () => {
-        if (imgPopup) imgPopup.parentNode.removeChild(imgPopup);
-        if (closeButton) closeButton.parentNode.removeChild(closeButton);
-    };
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.id = 'image-close-button';
+    closeButton.textContent = '×';
     closeButton.style.position = 'fixed';
-    closeButton.style.top = '24px';
-    closeButton.style.right = '24px';
-    closeButton.style.zIndex = '99999';
-    closeButton.style.fontSize = '2rem';
-    closeButton.style.background = '#fff';
-    closeButton.style.color = '#000';
-    closeButton.style.border = 'none';
-    closeButton.style.borderRadius = '50%';
-    closeButton.style.width = '48px';
-    closeButton.style.height = '48px';
+    closeButton.style.top = '20px';
+    closeButton.style.right = '20px';
+    closeButton.style.background = 'white';
+    closeButton.style.border = '2px solid black';
+    closeButton.style.color = 'black';
+    closeButton.style.fontSize = '32px';
+    closeButton.style.fontWeight = 'bold';
     closeButton.style.cursor = 'pointer';
-    closeButton.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    closeButton.style.padding = '0';
+    closeButton.style.borderRadius = '50%';
+    closeButton.style.width = '60px';
+    closeButton.style.height = '60px';
     closeButton.style.display = 'flex';
     closeButton.style.alignItems = 'center';
     closeButton.style.justifyContent = 'center';
-    closeButton.style.opacity = '1';
+    closeButton.style.zIndex = '10001';
+    closeButton.style.transition = 'all 0.2s ease';
+    closeButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+
+    // Add hover effect
+    closeButton.onmouseover = () => {
+        closeButton.style.background = '#f0f0f0';
+        closeButton.style.transform = 'scale(1.1)';
+    };
+    closeButton.onmouseout = () => {
+        closeButton.style.background = 'white';
+        closeButton.style.transform = 'scale(1)';
+    };
+
+    // Add semi-transparent overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'image-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    overlay.style.zIndex = '9999';
+
+    // Function to close everything
+    const closeEverything = () => {
+        popup.remove();
+        closeButton.remove();
+        overlay.remove();
+    };
+
+    // Add click handlers
+    closeButton.onclick = closeEverything;
+    overlay.onclick = closeEverything;
+
+    // Assemble the popup
+    popup.appendChild(img);
+    document.body.appendChild(overlay);
     document.body.appendChild(closeButton);
+    document.body.appendChild(popup);
 }
 
 function playVideo(videoUrl) {
-    console.log('Playing video:', videoUrl);
-    
-    // Remove any existing video player
-    let videoFrame = document.getElementById('keywordVideoFrame');
-    if (videoFrame) {
-        videoFrame.parentNode.removeChild(videoFrame);
-    }
+    // Remove any existing video popup and overlay
+    const existingPopup = document.getElementById('video-popup');
+    const existingOverlay = document.getElementById('video-overlay');
+    const existingCloseButton = document.getElementById('video-close-button');
+    if (existingPopup) existingPopup.remove();
+    if (existingOverlay) existingOverlay.remove();
+    if (existingCloseButton) existingCloseButton.remove();
 
-    // Remove any existing close button
-    let closeButton = document.getElementById('closeVideo');
-    if (closeButton) {
-        closeButton.parentNode.removeChild(closeButton);
-    }
+    // Create video popup container
+    const popup = document.createElement('div');
+    popup.id = 'video-popup';
+    popup.style.position = 'fixed';
+    popup.style.top = '0';
+    popup.style.left = '0';
+    popup.style.width = '100%';
+    popup.style.height = '100%';
+    popup.style.zIndex = '10000';
+    popup.style.backgroundColor = 'white';
+    popup.style.padding = '0';
+    popup.style.margin = '0';
+    popup.style.display = 'flex';
+    popup.style.justifyContent = 'center';
+    popup.style.alignItems = 'center';
 
-    // Create or update video frame
-    videoFrame = document.createElement('video');
-    videoFrame.id = 'keywordVideoFrame';
-    videoFrame.controls = true;
-    videoFrame.autoplay = true;
-    videoFrame.playsInline = true;
-    videoFrame.preload = 'auto';
-    videoFrame.crossOrigin = 'anonymous';
-    videoFrame.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 9999;
-        width: 1920px;
-        height: 1080px;
-        max-width: 100vw;
-        max-height: 100vh;
-        background: transparent;
-        object-fit: contain;
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    `;
-    document.body.appendChild(videoFrame);
+    // Create video element
+    const video = document.createElement('video');
+    video.controls = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'contain';
+    video.style.backgroundColor = 'white';
 
-    // Add custom styles for video controls
-    const style = document.createElement('style');
-    style.textContent = `
-        #keywordVideoFrame::-webkit-media-controls {
-            background-color: transparent !important;
-        }
-        #keywordVideoFrame::-webkit-media-controls-panel {
-            background-color: transparent !important;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Set video source with quality attributes
+    // Create source element
     const source = document.createElement('source');
     source.src = videoUrl;
-    source.type = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
-    videoFrame.appendChild(source);
+    source.type = 'video/mp4';
+    video.appendChild(source);
 
-    // Set video quality attributes
-    videoFrame.setAttribute('playsinline', '');
-    videoFrame.setAttribute('webkit-playsinline', '');
-    videoFrame.setAttribute('x5-playsinline', '');
-    videoFrame.setAttribute('x5-video-player-type', 'h5');
-    videoFrame.setAttribute('x5-video-player-fullscreen', 'true');
-    videoFrame.setAttribute('x5-video-orientation', 'portraint');
-    videoFrame.setAttribute('preload', 'auto');
-    videoFrame.setAttribute('x-webkit-airplay', 'allow');
-
-    // Show video frame with animation
-    videoFrame.style.display = 'block';
-    videoFrame.style.opacity = '0';
-    videoFrame.style.transform = 'translate(-50%, -50%) scale(0.9)';
-    setTimeout(() => {
-        videoFrame.style.opacity = '1';
-        videoFrame.style.transform = 'translate(-50%, -50%) scale(1)';
-    }, 50);
-
-    // Create close button
-    closeButton = document.createElement('button');
-    closeButton.id = 'closeVideo';
-    closeButton.innerHTML = '✕';
-    closeButton.onclick = () => {
-        if (videoFrame) {
-            videoFrame.pause();
-            videoFrame.parentNode.removeChild(videoFrame);
-        }
-        if (closeButton) {
-            closeButton.parentNode.removeChild(closeButton);
-        }
-        if (style) {
-            style.parentNode.removeChild(style);
-        }
-    };
-    closeButton.style.cssText = `
-        position: fixed;
-        top: 40px;
-        right: 40px;
-        z-index: 99999;
-        font-size: 2rem;
-        background: #fff;
-        color: #000;
-        border: none;
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 1;
-    `;
-    document.body.appendChild(closeButton);
-
-    // Error handling
-    videoFrame.onerror = (e) => {
-        console.error('Error playing video:', e);
+    // Add error handling
+    video.onerror = (e) => {
+        console.error('Video error:', e);
         const errorMessage = document.createElement('div');
-        errorMessage.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10000;
-            background: rgba(255, 0, 0, 0.9);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        `;
-        errorMessage.textContent = 'Error playing video. Please try again.';
-        document.body.appendChild(errorMessage);
-        
-        setTimeout(() => {
-            errorMessage.parentNode.removeChild(errorMessage);
-            if (videoFrame) videoFrame.parentNode.removeChild(videoFrame);
-            if (closeButton) closeButton.parentNode.removeChild(closeButton);
-            if (style) style.parentNode.removeChild(style);
-        }, 3000);
+        errorMessage.style.color = 'black';
+        errorMessage.style.textAlign = 'center';
+        errorMessage.style.padding = '20px';
+        errorMessage.textContent = 'Error loading video. Please try again.';
+        popup.appendChild(errorMessage);
     };
+
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.id = 'video-close-button';
+    closeButton.textContent = '×';
+    closeButton.style.position = 'fixed';
+    closeButton.style.top = '20px';
+    closeButton.style.right = '20px';
+    closeButton.style.background = 'white';
+    closeButton.style.border = '2px solid black';
+    closeButton.style.color = 'black';
+    closeButton.style.fontSize = '32px';
+    closeButton.style.fontWeight = 'bold';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.padding = '0';
+    closeButton.style.borderRadius = '50%';
+    closeButton.style.width = '60px';
+    closeButton.style.height = '60px';
+    closeButton.style.display = 'flex';
+    closeButton.style.alignItems = 'center';
+    closeButton.style.justifyContent = 'center';
+    closeButton.style.zIndex = '10001';
+    closeButton.style.transition = 'all 0.2s ease';
+    closeButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+
+    // Add hover effect
+    closeButton.onmouseover = () => {
+        closeButton.style.background = '#f0f0f0';
+        closeButton.style.transform = 'scale(1.1)';
+    };
+    closeButton.onmouseout = () => {
+        closeButton.style.background = 'white';
+        closeButton.style.transform = 'scale(1)';
+    };
+
+    // Add click handler
+    closeButton.onclick = (e) => {
+        e.stopPropagation(); // Prevent event from bubbling up
+        video.pause();
+        popup.remove();
+        closeButton.remove();
+    };
+
+    // Add click handler to popup for closing
+    popup.onclick = () => {
+        video.pause();
+        popup.remove();
+        closeButton.remove();
+    };
+
+    // Assemble the popup
+    popup.appendChild(video);
+    document.body.appendChild(closeButton);
+    document.body.appendChild(popup);
+
+    // Start playing the video
+    video.play().catch(error => {
+        console.error('Error playing video:', error);
+    });
 }
 
 function working_playVideo(videoUrl) {

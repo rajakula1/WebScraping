@@ -8,12 +8,16 @@ import openai
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, HttpUrl, Field
 from keywords import KEYWORD_VIDEO_MAP
 import re
+from fastapi.responses import StreamingResponse
+import aiofiles
+import logging
+import brotli
 
 # Load environment variables
 load_dotenv()
@@ -127,9 +131,15 @@ class AIScraper:
         for attempt in range(max_retries):
             try:
                 async with self.session.get(
-                    url, headers=headers, timeout=30
+                    url, headers=headers, timeout=30, raise_for_status=True
                 ) as response:
                     if response.status == 200:
+                        # Explicitly handle Brotli compression
+                        content_encoding = response.headers.get(
+                            "content-encoding", ""
+                        ).lower()
+                        if "br" in content_encoding:
+                            return await response.text()
                         return await response.text()
                     elif response.status == 403:
                         print(
@@ -373,12 +383,12 @@ async def scrape_urls(request: BatchScrapeRequest):
 
         # Process results and handle any exceptions
         processed_results = []
-        for result in results:
+        for i, result in enumerate(results):
             if isinstance(result, Exception):
                 print(f"Error processing URL: {str(result)}")
                 processed_results.append(
                     {
-                        "url": url,
+                        "url": str(request.urls[i]),
                         "status": "error",
                         "error": str(result),
                         "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S"),
@@ -410,16 +420,69 @@ async def list_videos():
     return videos
 
 
-# Serve video files
 @app.get("/video/{filename}")
-async def get_video(filename: str):
-    # URL decode the filename to handle spaces and special characters
-    decoded_filename = requests.utils.unquote(filename)
-    video_path = os.path.join(os.path.dirname(__file__), "videos", decoded_filename)
-    if not os.path.exists(video_path):
-        raise HTTPException(status_code=404, detail="Video not found")
+async def get_video(filename: str, request: Request):
+    try:
+        video_path = os.path.join("videos", filename)
+        if not os.path.exists(video_path):
+            raise HTTPException(status_code=404, detail="Video not found")
 
-    return FileResponse(video_path, media_type="video/mp4")
+        file_size = os.path.getsize(video_path)
+        range_header = request.headers.get("range")
+
+        if range_header:
+            try:
+                # Parse range header
+                range_match = re.match(r"bytes=(\d+)-(\d*)", range_header)
+                if range_match:
+                    start = int(range_match.group(1))
+                    end = (
+                        int(range_match.group(2))
+                        if range_match.group(2)
+                        else file_size - 1
+                    )
+
+                    if start >= file_size:
+                        raise HTTPException(
+                            status_code=416, detail="Requested range not satisfiable"
+                        )
+
+                    # Calculate content length
+                    content_length = end - start + 1
+
+                    # Open file and seek to start position
+                    file = open(video_path, "rb")
+                    file.seek(start)
+
+                    # Create response with partial content
+                    response = StreamingResponse(
+                        iter(lambda: file.read(8192), b""),
+                        media_type="video/mp4",
+                        headers={
+                            "Content-Range": f"bytes {start}-{end}/{file_size}",
+                            "Accept-Ranges": "bytes",
+                            "Content-Length": str(content_length),
+                            "Content-Type": "video/mp4",
+                        },
+                    )
+                    response.status_code = 206
+                    return response
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid range header")
+
+        # If no range header, return full file
+        return FileResponse(
+            video_path,
+            media_type="video/mp4",
+            headers={
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(file_size),
+                "Content-Type": "video/mp4",
+            },
+        )
+    except Exception as e:
+        logging.error(f"Error streaming video {filename}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error streaming video")
 
 
 if __name__ == "__main__":
