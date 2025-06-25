@@ -70,9 +70,9 @@ class ScrapeResponse(BaseModel):
     status: str
     error: Optional[str] = None
     matchedKeywords: List[str] = []
-    videoUrls: List[str] = []
-    illustrationUrls: List[str] = []
-    modelUrls: List[str] = []
+    videoUrls: List[dict] = []
+    illustrationUrls: List[dict] = []
+    modelUrls: List[dict] = []
     contentSummary: Optional[str] = None
     topics: Optional[List[str]] = None
     insights: Optional[List[str]] = None
@@ -94,9 +94,7 @@ class AIScraper:
     def __init__(self):
         self.session = None
         self.results_dir = "scraped_results"
-        self.video_dir = "videos"
         os.makedirs(self.results_dir, exist_ok=True)
-        os.makedirs(self.video_dir, exist_ok=True)
 
     async def init_session(self):
         """Initialize aiohttp session"""
@@ -242,59 +240,40 @@ class AIScraper:
 
             # Match keywords in content
             matched_keywords = []
-            video_urls = []
-            illustration_urls = []
-            model_urls = []
+            video_dicts = []
+            illustration_dicts = []
+            model_dicts = []
 
-            # Get all keywords from the mapping if none provided
             if not keywords:
                 keywords = list(KEYWORD_VIDEO_MAP.keys())
 
-            print(f"Using keywords: {keywords}")
-
-            # Normalize the HTML content for comparison
-            html_lower = html.lower()
-
             for keyword in keywords:
-                # Create a strict regex pattern that matches the exact keyword
-                # with word boundaries and handles special characters
-                pattern = (
-                    r"(?<![a-zA-Z0-9])"
-                    + re.escape(keyword.lower())
-                    + r"(?![a-zA-Z0-9])"
-                )
-                if re.search(pattern, html_lower):
-                    print(f"Found exact match for keyword: {keyword}")
-                    matched_keywords.append(keyword)
-
-                    # Create absolute URL for the video
-                    video_filename = KEYWORD_VIDEO_MAP.get(keyword, {}).get(
-                        "video", "default_video.mp4"
+                keyword_lower = keyword.lower()
+                if keyword_lower in [k.lower() for k in KEYWORD_VIDEO_MAP.keys()]:
+                    original_keyword = next(
+                        k
+                        for k in KEYWORD_VIDEO_MAP.keys()
+                        if k.lower() == keyword_lower
                     )
-                    encoded_filename = requests.utils.quote(video_filename)
-                    video_url = f"http://localhost:8000/video/{encoded_filename}"
-                    video_urls.append(video_url)
-
-                    # Create absolute URL for the illustration
-                    illustration_filename = KEYWORD_VIDEO_MAP.get(keyword, {}).get(
-                        "illustration", "default_illustration.jpg"
+                    video_dicts.append(
+                        KEYWORD_VIDEO_MAP[original_keyword].get("videos", {})
                     )
-                    encoded_illustration = requests.utils.quote(illustration_filename)
-                    illustration_url = (
-                        f"http://localhost:8000/video/{encoded_illustration}"
+                    illustration_dicts.append(
+                        KEYWORD_VIDEO_MAP[original_keyword].get("illustrations", {})
                     )
-                    illustration_urls.append(illustration_url)
-
-                    # Get model URL
-                    model_url = KEYWORD_VIDEO_MAP.get(keyword, {}).get("model", "")
-                    model_urls.append(model_url)
+                    model_dicts.append(
+                        KEYWORD_VIDEO_MAP[original_keyword].get("models", {})
+                    )
+                    matched_keywords.append(original_keyword)
                 else:
-                    print(f"No match found for keyword: {keyword}")
+                    video_dicts.append({})
+                    illustration_dicts.append({})
+                    model_dicts.append({})
 
             print(f"Matched keywords: {matched_keywords}")
-            print(f"Video URLs: {video_urls}")
-            print(f"Illustration URLs: {illustration_urls}")
-            print(f"Model URLs: {model_urls}")
+            print(f"Video URLs: {video_dicts}")
+            print(f"Illustration URLs: {illustration_dicts}")
+            print(f"Model URLs: {model_dicts}")
 
             # Analyze content
             results = await self.analyze_with_gpt(html, instructions, keywords)
@@ -305,9 +284,9 @@ class AIScraper:
                 "timestamp": timestamp,
                 "status": "success",
                 "matchedKeywords": matched_keywords,
-                "videoUrls": video_urls,
-                "illustrationUrls": illustration_urls,
-                "modelUrls": model_urls,
+                "videoUrls": video_dicts,
+                "illustrationUrls": illustration_dicts,
+                "modelUrls": model_dicts,
                 "contentSummary": results.get("contentSummary"),
                 "topics": results.get("topics"),
                 "insights": results.get("insights"),
@@ -401,88 +380,6 @@ async def scrape_urls(request: BatchScrapeRequest):
     except Exception as e:
         print(f"Batch processing error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# List available videos
-@app.get("/videos")
-async def list_videos():
-    video_dir = os.path.join(os.path.dirname(__file__), "videos")
-    if not os.path.exists(video_dir):
-        return []
-
-    videos = []
-    for filename in os.listdir(video_dir):
-        if filename.lower().endswith(
-            (".mp4", ".webm", ".ogg")
-        ):  # Support multiple video formats
-            videos.append(filename)
-
-    return videos
-
-
-@app.get("/video/{filename}")
-async def get_video(filename: str, request: Request):
-    try:
-        video_path = os.path.join("videos", filename)
-        if not os.path.exists(video_path):
-            raise HTTPException(status_code=404, detail="Video not found")
-
-        file_size = os.path.getsize(video_path)
-        range_header = request.headers.get("range")
-
-        if range_header:
-            try:
-                # Parse range header
-                range_match = re.match(r"bytes=(\d+)-(\d*)", range_header)
-                if range_match:
-                    start = int(range_match.group(1))
-                    end = (
-                        int(range_match.group(2))
-                        if range_match.group(2)
-                        else file_size - 1
-                    )
-
-                    if start >= file_size:
-                        raise HTTPException(
-                            status_code=416, detail="Requested range not satisfiable"
-                        )
-
-                    # Calculate content length
-                    content_length = end - start + 1
-
-                    # Open file and seek to start position
-                    file = open(video_path, "rb")
-                    file.seek(start)
-
-                    # Create response with partial content
-                    response = StreamingResponse(
-                        iter(lambda: file.read(8192), b""),
-                        media_type="video/mp4",
-                        headers={
-                            "Content-Range": f"bytes {start}-{end}/{file_size}",
-                            "Accept-Ranges": "bytes",
-                            "Content-Length": str(content_length),
-                            "Content-Type": "video/mp4",
-                        },
-                    )
-                    response.status_code = 206
-                    return response
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid range header")
-
-        # If no range header, return full file
-        return FileResponse(
-            video_path,
-            media_type="video/mp4",
-            headers={
-                "Accept-Ranges": "bytes",
-                "Content-Length": str(file_size),
-                "Content-Type": "video/mp4",
-            },
-        )
-    except Exception as e:
-        logging.error(f"Error streaming video {filename}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error streaming video")
 
 
 if __name__ == "__main__":

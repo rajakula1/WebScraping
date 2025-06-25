@@ -36,20 +36,25 @@ function highlightKeywords(keywords, videos, illustrations, models) {
     const keywordModelMap = new Map();
     
     keywords.forEach((keyword, index) => {
-        keywordVideoMap.set(keyword.toLowerCase(), videos[index]);
-        keywordIllustrationMap.set(keyword.toLowerCase(), illustrations[index]);
-        keywordModelMap.set(keyword.toLowerCase(), models[index]);
+        keywordVideoMap.set(keyword.toLowerCase(), videos[index] || {});
+        keywordIllustrationMap.set(keyword.toLowerCase(), illustrations[index] || {});
+        keywordModelMap.set(keyword.toLowerCase(), models[index] || {});
     });
     
     console.log('Keyword-Video Map:', Object.fromEntries(keywordVideoMap));
     console.log('Keyword-Illustration Map:', Object.fromEntries(keywordIllustrationMap));
     console.log('Keyword-Model Map:', Object.fromEntries(keywordModelMap));
 
-    // Create a single tooltip element
-    const tooltip = document.createElement('div');
-    tooltip.className = 'keyword-tooltip';
-    tooltip.style.display = 'none';
-    document.body.appendChild(tooltip);
+    // Create a single global tooltip element outside processTextNodes
+    let globalTooltip = document.querySelector('.keyword-tooltip');
+    if (!globalTooltip) {
+        globalTooltip = document.createElement('div');
+        globalTooltip.className = 'keyword-tooltip';
+        globalTooltip.style.display = 'none';
+        globalTooltip.style.position = 'absolute';
+        globalTooltip.style.zIndex = '9999';
+        document.body.appendChild(globalTooltip);
+    }
 
     // Process all text nodes in the page
     function processTextNodes(node) {
@@ -85,10 +90,9 @@ function highlightKeywords(keywords, videos, illustrations, models) {
                             keywordSpan.style.cursor = 'pointer';
                             keywordSpan.style.position = 'relative';
                             
-                            // Tooltip content for the three links
+                            // Tooltip content for the three icons
                             const tooltipContent = document.createElement('div');
                             tooltipContent.className = 'keyword-tooltip-content';
-                            // Style the tooltip for better UX
                             tooltipContent.style.position = 'absolute';
                             tooltipContent.style.left = '0';
                             tooltipContent.style.top = '100%';
@@ -104,103 +108,192 @@ function highlightKeywords(keywords, videos, illustrations, models) {
                             tooltipContent.style.transition = 'opacity 0.2s ease-in-out';
                             tooltipContent.style.whiteSpace = 'nowrap';
                             tooltipContent.style.borderRadius = '4px';
-                            
-                            // 3D Animation Video link
-                            const videoLink = document.createElement('a');
-                            const videoImg = document.createElement('img');
-                            videoImg.src = chrome.runtime.getURL('icons/Video.png');
-                            videoImg.alt = '3D Animation Video';
-                            videoImg.title = '3D Animation Video';
-                            videoImg.style.width = '24px';
-                            videoImg.style.height = '24px';
-                            videoImg.style.marginRight = '10px';
-                            videoImg.style.verticalAlign = 'middle';
-                            videoImg.style.display = 'inline-block';
-                            videoLink.appendChild(videoImg);
-                            const videoUrl = keywordVideoMap.get(keywordLower);
-                            videoLink.href = '#';
-                            videoLink.style.marginRight = '10px';
-                            videoLink.style.color = '#007bff';
-                            videoLink.style.textDecoration = 'none';
-                            videoLink.style.display = 'inline-block';
-                            videoLink.onclick = (e) => {
-                                e.preventDefault();
-                                if (videoUrl) {
-                                    playVideo(videoUrl);
-                                }
-                            };
-                            
-                            // Illustration link
-                            const illustrationLink = document.createElement('a');
-                            const illustrationImg = document.createElement('img');
-                            illustrationImg.src = chrome.runtime.getURL('icons/illustration.png');
-                            illustrationImg.alt = 'Illustration';
-                            illustrationImg.title = 'Illustration';
-                            illustrationImg.style.width = '24px';
-                            illustrationImg.style.height = '24px';
-                            illustrationImg.style.marginRight = '10px';
-                            illustrationImg.style.verticalAlign = 'middle';
-                            illustrationImg.style.display = 'inline-block';
-                            illustrationLink.appendChild(illustrationImg);
-                            const illustrationUrl = keywordIllustrationMap.get(keywordLower);
-                            illustrationLink.href = '#';
-                            illustrationLink.style.marginRight = '10px';
-                            illustrationLink.style.color = '#007bff';
-                            illustrationLink.style.textDecoration = 'none';
-                            illustrationLink.style.display = 'inline-block';
-                            illustrationLink.onclick = (e) => {
-                                e.preventDefault();
-                                if (illustrationUrl) {
-                                    openImagePopup(illustrationUrl);
-                                }
-                            };
-                            
-                            // Model link
-                            const modelLink = document.createElement('a');
-                            const modelImg = document.createElement('img');
-                            modelImg.src = chrome.runtime.getURL('icons/Model.png');
-                            modelImg.alt = 'Model';
-                            modelImg.title = 'Model';
-                            modelImg.style.width = '24px';
-                            modelImg.style.height = '24px';
-                            modelImg.style.marginRight = '10px';
-                            modelImg.style.verticalAlign = 'middle';
-                            modelImg.style.display = 'inline-block';
-                            modelLink.appendChild(modelImg);
-                            const modelUrl = keywordModelMap.get(keywordLower);
-                            modelLink.href = modelUrl || '#';
-                            modelLink.target = '_blank';
-                            modelLink.rel = 'noopener noreferrer';
-                            modelLink.style.color = '#007bff';
-                            modelLink.style.textDecoration = 'none';
-                            modelLink.style.display = 'inline-block';
-                            
-                            // Add links to tooltip content
-                            tooltipContent.appendChild(videoLink);
-                            tooltipContent.appendChild(illustrationLink);
-                            tooltipContent.appendChild(modelLink);
-                            
-                            // Add some spacing between icons
-                            tooltipContent.style.display = 'none';
-                            tooltipContent.style.gap = '10px';
-                            tooltipContent.style.alignItems = 'center';
-                            tooltipContent.style.padding = '8px';
-                            
-                            // Attach tooltip to the keyword span
-                            keywordSpan.appendChild(tooltipContent);
-                            
-                            // Updated tooltip show/hide logic with improved visibility control
-                            let tooltipTimeout;
-                            
+                            tooltipContent.style.display = 'flex';
+                            tooltipContent.style.gap = '20px';
+                            // --- Video Icon ---
+                            const videoIcon = document.createElement('img');
+                            videoIcon.src = chrome.runtime.getURL('icons/Video.png');
+                            videoIcon.alt = 'Videos';
+                            videoIcon.title = 'Videos';
+                            videoIcon.style.width = '32px';
+                            videoIcon.style.height = '32px';
+                            videoIcon.style.cursor = 'pointer';
+                            videoIcon.style.display = 'inline-block';
+                            videoIcon.style.marginRight = '8px';
+                            videoIcon.style.verticalAlign = 'middle';
+                            // Video submenu
+                            const videoSubmenu = document.createElement('div');
+                            videoSubmenu.className = 'submenu';
+                            videoSubmenu.style.position = 'absolute';
+                            videoSubmenu.style.left = '40px';
+                            videoSubmenu.style.top = '0';
+                            videoSubmenu.style.background = '#fff';
+                            videoSubmenu.style.border = '1px solid #ccc';
+                            videoSubmenu.style.padding = '8px 12px';
+                            videoSubmenu.style.zIndex = '1001';
+                            videoSubmenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                            videoSubmenu.style.display = 'none';
+                            videoSubmenu.style.flexDirection = 'column';
+                            videoSubmenu.style.gap = '8px';
+                            // Populate video submenu
+                            const videoDict = keywordVideoMap.get(keywordLower) || {};
+                            Object.entries(videoDict).forEach(([label, url]) => {
+                                const videoItem = document.createElement('div');
+                                videoItem.className = 'submenu-item';
+                                videoItem.textContent = label;
+                                videoItem.style.cursor = 'pointer';
+                                videoItem.style.color = '#007bff';
+                                videoItem.style.padding = '4px 0';
+                                videoItem.onclick = (e) => {
+                                    e.preventDefault();
+                                    if (url && url.startsWith('http')) {
+                                        playVideoFromLink(url);
+                                    } else if (url) {
+                                        playVideoFromLink('https://bcove.video/' + url);
+                                    }
+                                };
+                                videoSubmenu.appendChild(videoItem);
+                            });
+                            // Show/hide video submenu
+                            videoIcon.addEventListener('mouseenter', () => {
+                                videoSubmenu.style.display = 'flex';
+                            });
+                            videoIcon.addEventListener('mouseleave', () => {
+                                setTimeout(() => { videoSubmenu.style.display = 'none'; }, 200);
+                            });
+                            videoSubmenu.addEventListener('mouseenter', () => {
+                                videoSubmenu.style.display = 'flex';
+                            });
+                            videoSubmenu.addEventListener('mouseleave', () => {
+                                videoSubmenu.style.display = 'none';
+                            });
+                            // --- Illustration Icon ---
+                            const illustrationIcon = document.createElement('img');
+                            illustrationIcon.src = chrome.runtime.getURL('icons/illustration.png');
+                            illustrationIcon.alt = 'Illustrations';
+                            illustrationIcon.title = 'Illustrations';
+                            illustrationIcon.style.width = '32px';
+                            illustrationIcon.style.height = '32px';
+                            illustrationIcon.style.cursor = 'pointer';
+                            illustrationIcon.style.display = 'inline-block';
+                            illustrationIcon.style.marginRight = '8px';
+                            illustrationIcon.style.verticalAlign = 'middle';
+                            // Illustration submenu
+                            const illustrationSubmenu = document.createElement('div');
+                            illustrationSubmenu.className = 'submenu';
+                            illustrationSubmenu.style.position = 'absolute';
+                            illustrationSubmenu.style.left = '40px';
+                            illustrationSubmenu.style.top = '40px';
+                            illustrationSubmenu.style.background = '#fff';
+                            illustrationSubmenu.style.border = '1px solid #ccc';
+                            illustrationSubmenu.style.padding = '8px 12px';
+                            illustrationSubmenu.style.zIndex = '1001';
+                            illustrationSubmenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                            illustrationSubmenu.style.display = 'none';
+                            illustrationSubmenu.style.flexDirection = 'column';
+                            illustrationSubmenu.style.gap = '8px';
+                            // Populate illustration submenu
+                            const illustrationDict = keywordIllustrationMap.get(keywordLower) || {};
+                            Object.entries(illustrationDict).forEach(([label, url]) => {
+                                const illustrationItem = document.createElement('div');
+                                illustrationItem.className = 'submenu-item';
+                                illustrationItem.textContent = label;
+                                illustrationItem.style.cursor = 'pointer';
+                                illustrationItem.style.color = '#007bff';
+                                illustrationItem.style.padding = '4px 0';
+                                illustrationItem.onclick = (e) => {
+                                    e.preventDefault();
+                                    showImageFromLink(url);
+                                };
+                                illustrationSubmenu.appendChild(illustrationItem);
+                            });
+                            // Show/hide illustration submenu
+                            illustrationIcon.addEventListener('mouseenter', () => {
+                                illustrationSubmenu.style.display = 'flex';
+                            });
+                            illustrationIcon.addEventListener('mouseleave', () => {
+                                setTimeout(() => { illustrationSubmenu.style.display = 'none'; }, 200);
+                            });
+                            illustrationSubmenu.addEventListener('mouseenter', () => {
+                                illustrationSubmenu.style.display = 'flex';
+                            });
+                            illustrationSubmenu.addEventListener('mouseleave', () => {
+                                illustrationSubmenu.style.display = 'none';
+                            });
+                            // --- Model Icon ---
+                            const modelIcon = document.createElement('img');
+                            modelIcon.src = chrome.runtime.getURL('icons/Model.png');
+                            modelIcon.alt = 'Models';
+                            modelIcon.title = 'Models';
+                            modelIcon.style.width = '32px';
+                            modelIcon.style.height = '32px';
+                            modelIcon.style.cursor = 'pointer';
+                            modelIcon.style.display = 'inline-block';
+                            modelIcon.style.marginRight = '8px';
+                            modelIcon.style.verticalAlign = 'middle';
+                            // Model submenu
+                            const modelSubmenu = document.createElement('div');
+                            modelSubmenu.className = 'submenu';
+                            modelSubmenu.style.position = 'absolute';
+                            modelSubmenu.style.left = '40px';
+                            modelSubmenu.style.top = '80px';
+                            modelSubmenu.style.background = '#fff';
+                            modelSubmenu.style.border = '1px solid #ccc';
+                            modelSubmenu.style.padding = '8px 12px';
+                            modelSubmenu.style.zIndex = '1001';
+                            modelSubmenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                            modelSubmenu.style.display = 'none';
+                            modelSubmenu.style.flexDirection = 'column';
+                            modelSubmenu.style.gap = '8px';
+                            // Populate model submenu
+                            const modelDict = keywordModelMap.get(keywordLower) || {};
+                            Object.entries(modelDict).forEach(([label, url]) => {
+                                const modelItem = document.createElement('div');
+                                modelItem.className = 'submenu-item';
+                                modelItem.textContent = label;
+                                modelItem.style.cursor = 'pointer';
+                                modelItem.style.color = '#007bff';
+                                modelItem.style.padding = '4px 0';
+                                modelItem.onclick = (e) => {
+                                    e.preventDefault();
+                                    window.open(url, '_blank');
+                                };
+                                modelSubmenu.appendChild(modelItem);
+                            });
+                            // Show/hide model submenu
+                            modelIcon.addEventListener('mouseenter', () => {
+                                modelSubmenu.style.display = 'flex';
+                            });
+                            modelIcon.addEventListener('mouseleave', () => {
+                                setTimeout(() => { modelSubmenu.style.display = 'none'; }, 200);
+                            });
+                            modelSubmenu.addEventListener('mouseenter', () => {
+                                modelSubmenu.style.display = 'flex';
+                            });
+                            modelSubmenu.addEventListener('mouseleave', () => {
+                                modelSubmenu.style.display = 'none';
+                            });
+                            // Add icons and submenus to tooltip
+                            tooltipContent.appendChild(videoIcon);
+                            tooltipContent.appendChild(videoSubmenu);
+                            tooltipContent.appendChild(illustrationIcon);
+                            tooltipContent.appendChild(illustrationSubmenu);
+                            tooltipContent.appendChild(modelIcon);
+                            tooltipContent.appendChild(modelSubmenu);
+                            // Tooltip show/hide logic
+                            let tooltipHideTimeout = null;
                             const showTooltip = () => {
-                                clearTimeout(tooltipTimeout);
-                                tooltipContent.style.display = 'flex';
+                                if (tooltipHideTimeout) clearTimeout(tooltipHideTimeout);
+                                tooltipContent.style.display = 'block';
                                 tooltipContent.style.visibility = 'visible';
                                 tooltipContent.style.opacity = '1';
+                                // Position tooltipContent below the keywordSpan
+                                const rect = keywordSpan.getBoundingClientRect();
+                                tooltipContent.style.left = '0px';
+                                tooltipContent.style.top = `${keywordSpan.offsetHeight + 4}px`;
                             };
-                            
                             const hideTooltip = () => {
-                                tooltipTimeout = setTimeout(() => {
+                                tooltipHideTimeout = setTimeout(() => {
                                     tooltipContent.style.opacity = '0';
                                     tooltipContent.style.visibility = 'hidden';
                                     setTimeout(() => {
@@ -208,11 +301,26 @@ function highlightKeywords(keywords, videos, illustrations, models) {
                                     }, 200);
                                 }, 150);
                             };
-                            
-                            keywordSpan.addEventListener('mouseenter', showTooltip);
-                            keywordSpan.addEventListener('mouseleave', hideTooltip);
-                            tooltipContent.addEventListener('mouseenter', showTooltip);
-                            tooltipContent.addEventListener('mouseleave', hideTooltip);
+                            keywordSpan.addEventListener('mouseenter', (e) => {
+                                if (tooltipHideTimeout) clearTimeout(tooltipHideTimeout);
+                                showGlobalTooltip(
+                                    keyword,
+                                    keywordVideoMap.get(keywordLower) || {},
+                                    keywordIllustrationMap.get(keywordLower) || {},
+                                    keywordModelMap.get(keywordLower) || {},
+                                    keywordSpan.getBoundingClientRect()
+                                );
+                            });
+                            keywordSpan.addEventListener('mouseleave', (e) => {
+                                tooltipHideTimeout = setTimeout(hideGlobalTooltip, 350);
+                            });
+                            globalTooltip.addEventListener('mouseenter', () => {
+                                if (tooltipHideTimeout) clearTimeout(tooltipHideTimeout);
+                                globalTooltip.style.display = 'flex';
+                            });
+                            globalTooltip.addEventListener('mouseleave', () => {
+                                tooltipHideTimeout = setTimeout(hideGlobalTooltip, 350);
+                            });
                             
                             // Insert the highlighted keyword
                             parentNode.insertBefore(keywordSpan, node);
@@ -280,7 +388,6 @@ function highlightKeywords(keywords, videos, illustrations, models) {
             padding: 10px;
             border-radius: 5px;
             z-index: 9999;
-            pointer-events: none;
             font-family: Arial, sans-serif;
             max-width: 300px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -385,6 +492,134 @@ function highlightKeywords(keywords, videos, illustrations, models) {
     `;
     document.head.appendChild(style);
     console.log('Styles added to document');
+}
+
+// --- ROBUST GLOBAL TOOLTIP LOGIC ---
+let globalTooltip = document.querySelector('.keyword-tooltip');
+if (!globalTooltip) {
+    globalTooltip = document.createElement('div');
+    globalTooltip.className = 'keyword-tooltip';
+    globalTooltip.style.display = 'none';
+    globalTooltip.style.position = 'absolute';
+    globalTooltip.style.zIndex = '9999';
+    document.body.appendChild(globalTooltip);
+}
+let tooltipHideTimeout = null;
+
+function createIconWithSubmenu(iconSrc, alt, title, dict, onClick) {
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'inline-block';
+    // Icon
+    const icon = document.createElement('img');
+    icon.src = chrome.runtime.getURL(iconSrc);
+    icon.alt = alt;
+    icon.title = title;
+    icon.style.width = '32px';
+    icon.style.height = '32px';
+    icon.style.cursor = 'pointer';
+    icon.style.display = 'inline-block';
+    icon.style.marginRight = '8px';
+    icon.style.verticalAlign = 'middle';
+    // Submenu
+    const submenu = document.createElement('div');
+    submenu.className = 'submenu';
+    submenu.style.position = 'absolute';
+    submenu.style.left = '40px';
+    submenu.style.top = '0';
+    submenu.style.background = '#fff';
+    submenu.style.border = '1px solid #ccc';
+    submenu.style.padding = '8px 12px';
+    submenu.style.zIndex = '1001';
+    submenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    submenu.style.display = 'none';
+    submenu.style.flexDirection = 'column';
+    submenu.style.gap = '8px';
+    Object.entries(dict).forEach(([label, url]) => {
+        const item = document.createElement('div');
+        item.className = 'submenu-item';
+        item.textContent = label;
+        item.style.cursor = 'pointer';
+        item.style.color = '#007bff';
+        item.style.padding = '4px 0';
+        item.onclick = (e) => {
+            e.preventDefault();
+            onClick(url);
+            hideGlobalTooltip();
+        };
+        submenu.appendChild(item);
+    });
+    // Robust submenu show/hide
+    let submenuTimeout = null;
+    icon.addEventListener('mouseenter', () => {
+        if (submenuTimeout) clearTimeout(submenuTimeout);
+        submenu.style.display = 'flex';
+    });
+    icon.addEventListener('mouseleave', () => {
+        submenuTimeout = setTimeout(() => { submenu.style.display = 'none'; }, 250);
+    });
+    submenu.addEventListener('mouseenter', () => {
+        if (submenuTimeout) clearTimeout(submenuTimeout);
+        submenu.style.display = 'flex';
+    });
+    submenu.addEventListener('mouseleave', () => {
+        submenuTimeout = setTimeout(() => { submenu.style.display = 'none'; }, 250);
+    });
+    wrapper.appendChild(icon);
+    wrapper.appendChild(submenu);
+    return wrapper;
+}
+
+function showGlobalTooltip(keyword, videoDict, illustrationDict, modelDict, rect) {
+    if (tooltipHideTimeout) clearTimeout(tooltipHideTimeout);
+    globalTooltip.innerHTML = '';
+    globalTooltip.style.display = 'flex';
+    globalTooltip.style.flexDirection = 'row';
+    globalTooltip.style.gap = '20px';
+    globalTooltip.style.left = `${rect.left + window.scrollX}px`;
+    globalTooltip.style.top = `${rect.bottom + window.scrollY + 4}px`;
+    globalTooltip.style.visibility = 'visible';
+    globalTooltip.style.opacity = '1';
+    // Video icon and submenu
+    const videoIcon = createIconWithSubmenu(
+        'icons/Video.png',
+        'Videos',
+        'Videos',
+        videoDict,
+        (url) => {
+            if (url && url.startsWith('http')) {
+                playVideoFromLink(url);
+            } else if (url) {
+                playVideoFromLink('https://bcove.video/' + url);
+            }
+        }
+    );
+    // Illustration icon and submenu
+    const illustrationIcon = createIconWithSubmenu(
+        'icons/illustration.png',
+        'Illustrations',
+        'Illustrations',
+        illustrationDict,
+        (url) => showImageFromLink(url)
+    );
+    // Model icon and submenu
+    const modelIcon = createIconWithSubmenu(
+        'icons/Model.png',
+        'Models',
+        'Models',
+        modelDict,
+        (url) => window.open(url, '_blank')
+    );
+    globalTooltip.appendChild(videoIcon);
+    globalTooltip.appendChild(illustrationIcon);
+    globalTooltip.appendChild(modelIcon);
+}
+
+function hideGlobalTooltip() {
+    globalTooltip.style.display = 'none';
+    globalTooltip.style.visibility = 'hidden';
+    globalTooltip.style.opacity = '0';
+    globalTooltip.innerHTML = '';
 }
 
 function openImagePopup(imageUrl) {
@@ -786,4 +1021,14 @@ function playVidee(videoUrl) {
         errorMessage.textContent = 'Error playing video. Please try again.';
         videoFrame.parentNode.insertBefore(errorMessage, videoFrame.nextSibling);
     };
+}
+
+function playVideoFromLink(videoUrl) {
+    console.log('Opening video link:', videoUrl);
+    window.open(videoUrl, '_blank');
+}
+
+function showImageFromLink(imageUrl) {
+    console.log('Opening image link:', imageUrl);
+    window.open(imageUrl, '_blank');
 }
