@@ -70,9 +70,10 @@ class ScrapeResponse(BaseModel):
     status: str
     error: Optional[str] = None
     matchedKeywords: List[str] = []
-    videoUrls: List[dict] = []
-    illustrationUrls: List[dict] = []
-    modelUrls: List[dict] = []
+    videoUrls: List[list] = []
+    illustrationUrls: List[list] = []
+    modelUrls: List[list] = []
+    scripts: List[str] = []
     contentSummary: Optional[str] = None
     topics: Optional[List[str]] = None
     insights: Optional[List[str]] = None
@@ -243,6 +244,7 @@ class AIScraper:
             video_dicts = []
             illustration_dicts = []
             model_dicts = []
+            scripts = []
 
             if not keywords:
                 keywords = list(KEYWORD_VIDEO_MAP.keys())
@@ -256,19 +258,23 @@ class AIScraper:
                         if k.lower() == keyword_lower
                     )
                     video_dicts.append(
-                        KEYWORD_VIDEO_MAP[original_keyword].get("videos", {})
+                        KEYWORD_VIDEO_MAP[original_keyword].get("videos", [])
                     )
                     illustration_dicts.append(
-                        KEYWORD_VIDEO_MAP[original_keyword].get("illustrations", {})
+                        KEYWORD_VIDEO_MAP[original_keyword].get("illustrations", [])
                     )
                     model_dicts.append(
-                        KEYWORD_VIDEO_MAP[original_keyword].get("models", {})
+                        KEYWORD_VIDEO_MAP[original_keyword].get("models", [])
+                    )
+                    scripts.append(
+                        KEYWORD_VIDEO_MAP[original_keyword].get("script", "")
                     )
                     matched_keywords.append(original_keyword)
                 else:
-                    video_dicts.append({})
-                    illustration_dicts.append({})
-                    model_dicts.append({})
+                    video_dicts.append([])
+                    illustration_dicts.append([])
+                    model_dicts.append([])
+                    scripts.append("")
 
             print(f"Matched keywords: {matched_keywords}")
             print(f"Video URLs: {video_dicts}")
@@ -287,6 +293,7 @@ class AIScraper:
                 "videoUrls": video_dicts,
                 "illustrationUrls": illustration_dicts,
                 "modelUrls": model_dicts,
+                "scripts": scripts,
                 "contentSummary": results.get("contentSummary"),
                 "topics": results.get("topics"),
                 "insights": results.get("insights"),
