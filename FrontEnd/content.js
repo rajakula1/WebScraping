@@ -191,68 +191,77 @@ function highlightKeywords(keywords, videos, illustrations, models, scripts) {
         }
 
         .keyword-tooltip {
-            position: fixed;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
+            display: flex !important;
+            flex-direction: row;
+            align-items: center;
+            background: #fff;
+            color: #333;
+            padding: 20px 24px;
+            border-radius: 16px;
             z-index: 1001;
-            font-family: Arial, sans-serif;
-            max-width: 300px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            transition: opacity 0.3s ease;
-            backdrop-filter: blur(4px);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 400px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .tooltip-content {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
         }
 
         .tooltip-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
         .tooltip-icon {
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
+            transition: transform 0.2s ease;
         }
 
         .tooltip-text {
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: 500;
         }
 
         .submenu {
             position: absolute;
             background: white;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             z-index: 1002;
-            min-width: 200px;
+            min-width: 220px;
             max-height: 300px;
             overflow-y: auto;
             padding: 8px 0;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .submenu-item {
-            padding: 8px 12px;
+            padding: 10px 16px;
             cursor: pointer;
             color: #333;
-            border-bottom: 1px solid #eee;
-            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s ease;
             font-size: 14px;
             font-weight: 500;
-            border-radius: 4px;
-            margin: 0 4px;
+            border-radius: 6px;
+            margin: 0 6px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .submenu-item:hover {
-            background-color: #f0f8ff;
+            background-color: #f8f9fa;
             color: #007bff;
+            transform: translateX(4px);
         }
 
         .submenu-item:last-child {
@@ -260,8 +269,8 @@ function highlightKeywords(keywords, videos, illustrations, models, scripts) {
         }
         
         .submenu-item:active {
-            background-color: #e6f3ff;
-            transform: scale(0.98);
+            background-color: #e3f2fd;
+            transform: translateX(4px) scale(0.98);
         }
         
         /* Ensure submenus are above other elements */
@@ -275,6 +284,28 @@ function highlightKeywords(keywords, videos, illustrations, models, scripts) {
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
+        }
+
+        .tooltip-icon-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        .tooltip-divider {
+            width: 1px;
+            height: 36px;
+            background: #000;
+            margin: 0 12px;
+            align-self: center;
+            opacity: 1;
+            border-radius: 2px;
+            border: none;
         }
     `;
     document.head.appendChild(style);
@@ -291,30 +322,50 @@ function createIconWithSubmenu(iconSrc, alt, title, itemList, onClick) {
     icon.src = chrome.runtime.getURL(iconSrc);
     icon.alt = alt;
     icon.title = title;
-    icon.style.width = '32px';
-    icon.style.height = '32px';
+    icon.style.width = '48px';
+    icon.style.height = '48px';
     icon.style.cursor = 'pointer';
     icon.style.display = 'inline-block';
     icon.style.marginRight = '8px';
     icon.style.verticalAlign = 'middle';
+    icon.style.transition = 'all 0.3s ease';
+    icon.style.borderRadius = '0';
+    icon.style.padding = '0';
+    icon.style.backgroundColor = 'transparent';
+    icon.style.border = 'none';
+    
+    // Enhanced hover effects for icon
+    icon.addEventListener('mouseenter', () => {
+        icon.style.transform = 'scale(1.1) translateY(-2px)';
+        icon.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        icon.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    });
+    
+    icon.addEventListener('mouseleave', () => {
+        icon.style.transform = 'scale(1) translateY(0)';
+        icon.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        icon.style.boxShadow = 'none';
+    });
     
     const submenu = document.createElement('div');
     submenu.className = 'submenu';
     submenu.style.position = 'absolute';
-    submenu.style.left = '40px';
-    submenu.style.top = '0';
-    submenu.style.background = '#fff';
-    submenu.style.border = '1px solid #ccc';
-    submenu.style.padding = '8px 12px';
-    submenu.style.zIndex = '1002'; // Higher z-index
-    submenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    submenu.style.left = '48px';
+    submenu.style.top = '-8px';
+    submenu.style.background = 'rgba(255, 255, 255, 0.98)';
+    submenu.style.border = '1px solid #e1e5e9';
+    submenu.style.padding = '8px 0';
+    submenu.style.zIndex = '1002';
+    submenu.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
     submenu.style.display = 'none';
     submenu.style.flexDirection = 'column';
-    submenu.style.gap = '8px';
-    submenu.style.minWidth = '200px';
-    submenu.style.borderRadius = '4px';
+    submenu.style.gap = '4px';
+    submenu.style.minWidth = '240px';
+    submenu.style.borderRadius = '12px';
     submenu.style.maxHeight = '300px';
     submenu.style.overflowY = 'auto';
+    submenu.style.backdropFilter = 'blur(8px)';
+    submenu.style.border = '1px solid rgba(255, 255, 255, 0.2)';
     
     // Function to adjust submenu position if it goes off-screen
     const adjustSubmenuPosition = () => {
@@ -323,13 +374,13 @@ function createIconWithSubmenu(iconSrc, alt, title, itemList, onClick) {
         const viewportHeight = window.innerHeight;
         
         // Check if submenu goes off the right edge
-        if (rect.right > viewportWidth - 10) {
-            submenu.style.left = '-200px'; // Position to the left of the icon
+        if (rect.right > viewportWidth - 20) {
+            submenu.style.left = '-240px'; // Position to the left of the icon
         }
         
         // Check if submenu goes off the bottom edge
-        if (rect.bottom > viewportHeight - 10) {
-            submenu.style.top = '-100px'; // Position above the icon
+        if (rect.bottom > viewportHeight - 20) {
+            submenu.style.top = '-200px'; // Position above the icon
         }
     };
     
@@ -344,20 +395,26 @@ function createIconWithSubmenu(iconSrc, alt, title, itemList, onClick) {
             submenuItem.textContent = itemTitle;
             console.log(`Setting text content to: ${itemTitle}`);
             submenuItem.style.cursor = 'pointer';
-            submenuItem.style.color = '#007bff';
-            submenuItem.style.padding = '8px 12px';
-            submenuItem.style.borderRadius = '4px';
-            submenuItem.style.transition = 'background-color 0.2s ease';
-            submenuItem.style.borderBottom = '1px solid #eee';
+            submenuItem.style.color = '#333';
+            submenuItem.style.padding = '12px 16px';
+            submenuItem.style.borderRadius = '8px';
+            submenuItem.style.transition = 'all 0.2s ease';
+            submenuItem.style.borderBottom = '1px solid #f0f0f0';
             submenuItem.style.fontSize = '14px';
             submenuItem.style.fontWeight = '500';
+            submenuItem.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            submenuItem.style.margin = '0 8px';
             
-            // Hover effect
+            // Enhanced hover effect
             submenuItem.addEventListener('mouseenter', () => {
-                submenuItem.style.backgroundColor = '#f0f8ff';
+                submenuItem.style.backgroundColor = '#f8f9fa';
+                submenuItem.style.color = '#007bff';
+                submenuItem.style.transform = 'translateX(4px)';
             });
             submenuItem.addEventListener('mouseleave', () => {
                 submenuItem.style.backgroundColor = 'transparent';
+                submenuItem.style.color = '#333';
+                submenuItem.style.transform = 'translateX(0)';
             });
             
             submenuItem.onclick = (e) => {
@@ -382,8 +439,9 @@ function createIconWithSubmenu(iconSrc, alt, title, itemList, onClick) {
         const noItem = document.createElement('div');
         noItem.textContent = 'No items available';
         noItem.style.color = '#999';
-        noItem.style.padding = '8px 12px';
+        noItem.style.padding = '12px 16px';
         noItem.style.fontStyle = 'italic';
+        noItem.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
         submenu.appendChild(noItem);
     }
     
@@ -397,6 +455,7 @@ function createIconWithSubmenu(iconSrc, alt, title, itemList, onClick) {
         }
         submenu.style.display = 'flex';
         submenu.style.opacity = '1';
+        submenu.style.transform = 'scale(1) translateY(0)';
         
         // Adjust position after showing
         setTimeout(adjustSubmenuPosition, 10);
@@ -405,13 +464,15 @@ function createIconWithSubmenu(iconSrc, alt, title, itemList, onClick) {
     const hideSubmenu = () => {
         submenuTimeout = setTimeout(() => {
             submenu.style.opacity = '0';
+            submenu.style.transform = 'scale(0.95) translateY(-10px)';
             setTimeout(() => {
                 submenu.style.display = 'none';
                 submenu.style.opacity = '1';
+                submenu.style.transform = 'scale(1) translateY(0)';
                 // Reset position
-                submenu.style.left = '40px';
-                submenu.style.top = '0';
-            }, 150);
+                submenu.style.left = '48px';
+                submenu.style.top = '-8px';
+            }, 200);
         }, 300); // Increased delay to prevent accidental hiding
     };
     
@@ -454,20 +515,24 @@ function showGlobalTooltip(keyword, videoList, illustrationList, modelList, scri
     globalTooltip.innerHTML = '';
     globalTooltip.style.display = 'flex';
     globalTooltip.style.flexDirection = 'row';
-    globalTooltip.style.gap = '20px';
+    globalTooltip.style.gap = '0';
     globalTooltip.style.left = `${rect.left + window.scrollX}px`;
-    globalTooltip.style.top = `${rect.bottom + window.scrollY + 4}px`;
+    globalTooltip.style.top = `${rect.bottom + window.scrollY + 8}px`;
     globalTooltip.style.visibility = 'visible';
     globalTooltip.style.opacity = '1';
-    globalTooltip.style.zIndex = '1001'; // Lower than submenus
-    globalTooltip.style.padding = '12px 16px';
-    globalTooltip.style.borderRadius = '8px';
-    globalTooltip.style.background = 'rgba(0, 0, 0, 0.9)';
-    globalTooltip.style.backdropFilter = 'blur(4px)';
+    globalTooltip.style.zIndex = '1001';
+    globalTooltip.style.padding = '20px 24px';
+    globalTooltip.style.borderRadius = '16px';
+    globalTooltip.style.background = '#fff';
+    globalTooltip.style.backdropFilter = 'blur(12px)';
+    globalTooltip.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+    globalTooltip.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15)';
+    globalTooltip.style.color = '#333';
+    globalTooltip.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
     
     // Video icon and submenu
     const videoIcon = createIconWithSubmenu(
-        'icons/Video_Img.png',
+        'icons/color_video_img.png',
         'Videos',
         'Videos',
         videoList,
@@ -482,7 +547,7 @@ function showGlobalTooltip(keyword, videoList, illustrationList, modelList, scri
     
     // Illustration icon and submenu
     const illustrationIcon = createIconWithSubmenu(
-        'icons/Illustration_Img.png',
+        'icons/color_illustration_img.png',
         'Illustrations',
         'Illustrations',
         illustrationList,
@@ -491,7 +556,7 @@ function showGlobalTooltip(keyword, videoList, illustrationList, modelList, scri
     
     // Model icon and submenu
     const modelIcon = createIconWithSubmenu(
-        'icons/Model_Img.png',
+        'icons/color_model_img.png',
         'Models',
         'Models',
         modelList,
@@ -500,23 +565,31 @@ function showGlobalTooltip(keyword, videoList, illustrationList, modelList, scri
     
     // Script icon
     const scriptIcon = document.createElement('img');
-    scriptIcon.src = chrome.runtime.getURL('icons/Text_Img.png');
+    scriptIcon.src = chrome.runtime.getURL('icons/color_text_img.png');
     scriptIcon.alt = 'Script';
     scriptIcon.title = 'Show Script';
-    scriptIcon.style.width = '32px';
-    scriptIcon.style.height = '32px';
+    scriptIcon.style.width = '48px';
+    scriptIcon.style.height = '48px';
     scriptIcon.style.cursor = 'pointer';
     scriptIcon.style.display = 'inline-block';
     scriptIcon.style.marginRight = '8px';
     scriptIcon.style.verticalAlign = 'middle';
-    scriptIcon.style.transition = 'transform 0.2s ease';
+    scriptIcon.style.transition = 'all 0.3s ease';
+    scriptIcon.style.borderRadius = '0';
+    scriptIcon.style.padding = '0';
+    scriptIcon.style.backgroundColor = 'transparent';
+    scriptIcon.style.border = 'none';
     
-    // Hover effect for script icon
+    // Enhanced hover effect for script icon
     scriptIcon.addEventListener('mouseenter', () => {
-        scriptIcon.style.transform = 'scale(1.1)';
+        scriptIcon.style.transform = 'scale(1.1) translateY(-2px)';
+        scriptIcon.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        scriptIcon.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
     });
     scriptIcon.addEventListener('mouseleave', () => {
-        scriptIcon.style.transform = 'scale(1)';
+        scriptIcon.style.transform = 'scale(1) translateY(0)';
+        scriptIcon.style.backgroundColor = 'transparent';
+        scriptIcon.style.boxShadow = 'none';
     });
     
     scriptIcon.onclick = (e) => {
@@ -525,10 +598,19 @@ function showGlobalTooltip(keyword, videoList, illustrationList, modelList, scri
         showScriptPopup(scriptText, keyword);
     };
     
-    globalTooltip.appendChild(videoIcon);
-    globalTooltip.appendChild(illustrationIcon);
-    globalTooltip.appendChild(modelIcon);
-    globalTooltip.appendChild(scriptIcon);
+    // Append icons and dividers
+    const icons = [videoIcon, illustrationIcon, modelIcon, scriptIcon];
+    icons.forEach((icon, idx) => {
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'tooltip-icon-container';
+        iconContainer.appendChild(icon);
+        globalTooltip.appendChild(iconContainer);
+        if (idx < icons.length - 1) {
+            const divider = document.createElement('div');
+            divider.className = 'tooltip-divider';
+            globalTooltip.appendChild(divider);
+        }
+    });
 }
 
 function hideGlobalTooltip() {
