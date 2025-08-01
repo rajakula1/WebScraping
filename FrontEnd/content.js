@@ -1147,8 +1147,8 @@ function showScriptPopup(text, keyword) {
     box.style.background = '#fff';
     box.style.padding = '32px';
     box.style.borderRadius = '8px';
-    box.style.maxWidth = '600px';
-    box.style.maxHeight = '80vh';
+    box.style.maxWidth = '800px';
+    box.style.maxHeight = '150vh';
     box.style.overflowY = 'auto';
     box.style.boxShadow = '0 2px 16px rgba(0,0,0,0.3)';
     
@@ -1166,7 +1166,7 @@ function showScriptPopup(text, keyword) {
     // Script text
     const textDiv = document.createElement('div');
     textDiv.style.whiteSpace = 'pre-wrap';
-    textDiv.style.fontSize = '1.1em';
+    textDiv.style.fontSize = '1.3em';
     textDiv.textContent = text;
     
     // Assemble

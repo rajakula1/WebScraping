@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Johns Hopkins",
+  "name": "WK",
   "version": "1.0",
   "description": "Enhances medical content with 3D animations and illustrations",
   "permissions": [
@@ -10,7 +10,7 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {      
-      "128": "icons/JHS_3D.png"
+      "128": "icons/WK_LogoP.png"
     }
   },
   "content_scripts": [
@@ -28,6 +28,6 @@
     }
   ],
   "icons": {
-    "128": "icons/JHS_3D.png"
+    "128": "icons/WK_LogoP.png"
   }
 }
